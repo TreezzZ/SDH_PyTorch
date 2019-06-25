@@ -41,36 +41,32 @@ def run_sdh(opt):
     #     database_targets = torch.Tensor(database_dataloader.dataset.targets)
 
     # SDH Algorithm
-    cl = [12, 24, 32, 64, 128]
-    for c in cl:
-        opt.code_length = c
-        print(c)
-        P, anchor = sdh.sdh(train_data,
-                            train_targets,
-                            query_data,
-                            query_targets,
-                            opt.code_length,
-                            opt.num_anchor,
-                            opt.max_iter,
-                            opt.lamda,
-                            opt.nu,
-                            opt.sigma,
-                            opt.topk,
-                            opt.evaluate_freq,
-                            )
+    P, anchor = sdh.sdh(train_data,
+                        train_targets,
+                        query_data,
+                        query_targets,
+                        opt.code_length,
+                        opt.num_anchor,
+                        opt.max_iter,
+                        opt.lamda,
+                        opt.nu,
+                        opt.sigma,
+                        opt.topk,
+                        opt.evaluate_freq,
+                        )
 
-        # Evaluate on whole dataset
-        mAP = sdh.evaluate(query_data,
-                           query_targets,
-                           database_data,
-                           database_targets,
-                           anchor,
-                           P,
-                           opt.sigma,
-                           topk=opt.topk,
-                           )
+    # Evaluate on whole dataset
+    mAP = sdh.evaluate(query_data,
+                       query_targets,
+                       database_data,
+                       database_targets,
+                       anchor,
+                       P,
+                       opt.sigma,
+                       topk=opt.topk,
+                       )
 
-        logger.info('final_mAP: {:.4f}'.format(mAP))
+    logger.info('final_mAP: {:.4f}'.format(mAP))
 
 
 def load_parse():
