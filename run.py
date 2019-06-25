@@ -13,15 +13,6 @@ from loguru import logger
 
 
 def run_sdh(opt):
-    """运行DLFH算法
-
-    Parameters
-        opt: parser
-        程序运行参数
-
-    Returns
-        None
-    """
     # Load data
     query_data, query_targets, \
     train_data, train_targets, \
@@ -33,6 +24,7 @@ def run_sdh(opt):
                                                            opt.num_workers,
                                                            )
 
+    # Normalization and one-hot
     query_data = normalization(query_data)
     query_data = torch.Tensor(query_data.reshape((query_data.shape[0], -1)))
     train_data = normalization(train_data)
@@ -49,23 +41,36 @@ def run_sdh(opt):
     #     database_targets = torch.Tensor(database_dataloader.dataset.targets)
 
     # SDH Algorithm
-    B, P, anchor = sdh.sdh(train_data,
-                           train_targets,
-                           query_data,
+    cl = [12, 24, 32, 64, 128]
+    for c in cl:
+        opt.code_length = c
+        print(c)
+        P, anchor = sdh.sdh(train_data,
+                            train_targets,
+                            query_data,
+                            query_targets,
+                            opt.code_length,
+                            opt.num_anchor,
+                            opt.max_iter,
+                            opt.lamda,
+                            opt.nu,
+                            opt.sigma,
+                            opt.topk,
+                            opt.evaluate_freq,
+                            )
+
+        # Evaluate on whole dataset
+        mAP = sdh.evaluate(query_data,
                            query_targets,
-                           opt.code_length,
-                           10 if opt.dataset == 'cifar10-gist' else 21,
-                           opt.num_anchor,
-                           opt.max_iter,
-                           opt.lamda,
-                           opt.nu,
+                           database_data,
+                           database_targets,
+                           anchor,
+                           P,
                            opt.sigma,
-                           opt.evaluate_freq,
+                           topk=opt.topk,
                            )
 
-    mAP = sdh.evaluate(query_data, query_targets, database_data, database_targets, anchor, P, opt.sigma, 5000)
-
-    logger.info('mAP: {:.4f}'.format(mAP))
+        logger.info('final_mAP: {:.4f}'.format(mAP))
 
 
 def load_parse():
@@ -93,8 +98,8 @@ def load_parse():
                         help='Number of query(default: 1000)')
     parser.add_argument('--num-train', default=5000, type=int,
                         help='Number of train(default: 5000)')
-    parser.add_argument('--topk', default=5000, type=int,
-                        help='Compute map of top k (default: 5000)')
+    parser.add_argument('--topk', default=-1, type=int,
+                        help='Compute map of top k (default: -1, use whole dataset)')
     parser.add_argument('--evaluate-freq', default=1, type=int,
                         help='Frequency of evaluate (default: 1)')
 

@@ -3,7 +3,7 @@
 
 
 def calc_hamming_dist(B1, B2):
-    """计算B1，B2间的hamming distance
+    """Compute hamming distance between B1 and B2
 
     Parameters
         B1, B2: Tensor

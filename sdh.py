@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import utils.dcc as dcc
-
 from utils.calc_map import calc_map
-from data.transform import encode_onehot
 
 import torch
 
 from sklearn.metrics.pairwise import rbf_kernel
+from loguru import logger
 
 
 def sdh(train_data,
@@ -16,12 +14,12 @@ def sdh(train_data,
         query_data,
         query_targets,
         code_length,
-        num_class,
         num_anchor,
         max_iter,
         lamda,
         nu,
         sigma,
+        topk,
         evaluate_freq,
         ):
     """SDH algorithm
@@ -42,9 +40,6 @@ def sdh(train_data,
         code_length: int
         Hash code length
 
-        num_class: int
-        Number of classes
-
         num_anchor: int
         Number of anchor points
         
@@ -60,12 +55,15 @@ def sdh(train_data,
         sigma: float
         Hyper-parameter
 
+        topk: int
+        Compute mAP using top k retrieval result
+
         evaluate_freq: int
         Frequency of evaluate
 
     Returns
-        hash_code: Tensor
-        Binary code
+        final_P, final_anchor: Tensor
+        Used to construct F(X)
     """
     # Permute data
     perm_index = torch.randperm(train_data.shape[0])
@@ -76,28 +74,50 @@ def sdh(train_data,
     anchor = train_data[torch.randperm(train_data.shape[0])[:num_anchor], :]
 
     # Map training data via RBF kernel
-    phi_x = torch.Tensor(rbf_kernel(train_data.numpy(), anchor.numpy(), sigma))
+    phi_x = torch.Tensor(rbf_kernel(train_data.numpy(), anchor.numpy(), sigma)).t()
 
     # Initialize B
     B = torch.randn((code_length, train_data.shape[0])).sign()
-    Y = train_targets
+    Y = train_targets.t()
 
+    best_map = 0.0
     for itr in range(max_iter):
         # G-Step
-        W = torch.inverse(B @ B.t() + lamda * torch.eye(code_length)) @ B @ Y
+        W = torch.inverse(B @ B.t() + lamda * torch.eye(code_length)) @ B @ Y.t()
 
         # F-Step
-        P = (torch.inverse(phi_x @ phi_x.t()) @ phi_x).t() @ B.t()
-        F_X = phi_x @ P
+        P = torch.inverse(phi_x @ phi_x.t()) @ phi_x @ B.t()
+        F_X = P.t() @ phi_x
 
         # B-Step
-        B = dcc.solve(B, W, Y, F_X, nu)
+        B = solve_dcc(B, W, Y, F_X, nu)
 
+        # Evaluate within iteration
         if itr % evaluate_freq == evaluate_freq - 1:
-            mAP = evaluate(query_data, query_targets, train_data, train_targets, anchor, P, sigma, 5000)
-            print('map: {:.4f}'.format(mAP))
-    
-    return B, P, anchor
+            mAP = evaluate(query_data, query_targets, train_data, train_targets, anchor, P, sigma, topk)
+            logger.info('[iter: {}][mAP: {:.4f}]'.format(itr+1, mAP))
+            if best_map < mAP:
+                best_map = mAP
+                final_P = P
+                final_anchor = anchor
+
+    return final_P, final_anchor
+
+
+def solve_dcc(B, W, Y, F_X, nu):
+    """Solve DCC(Discrete Cyclic Coordinate Descent) problem
+    """
+    for i in range(B.shape[0]):
+        Q = W @ Y + nu * F_X
+
+        q = Q[i, :]
+        v = W[i, :]
+        W_prime = torch.cat((W[:i, :], W[i+1:, :]))
+        B_prime = torch.cat((B[:i, :], B[i+1:, :]))
+
+        B[i, :] = (q - B_prime.t() @ W_prime @ v).sign()
+
+    return B
    
 
 def evaluate(query_data, query_targets, database_data, database_targets, anchor, P, sigma, topk=None):
@@ -136,7 +156,7 @@ def evaluate(query_data, query_targets, database_data, database_targets, anchor,
     database_code = generate_code(database_data, anchor, P, sigma)
     query_code = generate_code(query_data, anchor, P, sigma)
 
-    # 计算map
+    # Compute mAP
     meanAP = calc_map(query_code,
                       database_code,
                       query_targets,

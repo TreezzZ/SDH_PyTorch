@@ -77,7 +77,7 @@ def load_data(root,
               batch_size,
               num_workers,
               ):
-    """加载cifar10数据
+    """Load cifar10 data
 
     Parameters
         root: str
@@ -97,7 +97,6 @@ def load_data(root,
 
     Returns
         query_dataloader, train_dataloader, database_dataloader: DataLoader
-        数据加载器
     """
     CIFAR10.init(root, num_query, num_train)
     query_dataset = CIFAR10('query', transform=img_transform(), target_transform=Onehot())
@@ -122,7 +121,7 @@ def load_data(root,
 
 
 class CIFAR10(data.Dataset):
-    """加载官网下载的CIFAR10数据集"""
+    """CIFAR-10 dataset"""
     @staticmethod
     def init(root, num_query, num_train):
         data_list = ['data_batch_1',

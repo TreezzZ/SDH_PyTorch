@@ -13,23 +13,23 @@ def calc_map(query_code,
              device,
              topk=None,
              ):
-    """计算mAP
+    """Compute mAP
 
     Parameters
         query_code: ndarray, {-1, +1}^{m * Q}
-        query的hash code
+        Query hash code
 
         database_code: ndarray, {-1, +1}^{n * Q}
-        database的hash code
+        Database hash code
 
         query_labels: ndarray, {0, 1}^{m * n_classes}
-        query的label，onehot编码
+        Query label，onehot
 
         database_labels: ndarray, {0, 1}^{n * n_classes}
-        database的label，onehot编码
+        Database label，onehot
 
         topk: int
-        计算前k个map
+        Compute mAP using top k retrieval result
 
     Returns
         meanAP: float
@@ -39,26 +39,26 @@ def calc_map(query_code,
     mean_AP = 0.0
 
     for i in range(num_query):
-        # 检索
+        # Retrieval result
         retrieval = (query_labels[i, :] @ database_labels.t() > 0).float()
 
-        # hamming distance
+        # Hamming distance
         hamming_dist = calc_hamming_dist(query_code[i, :], database_code)
 
-        # 根据hamming distance安排检索结果位置，并取topk个
+        # According to hamming distance, sort and acquire topk data
         retrieval = retrieval[torch.argsort(hamming_dist)][:topk]
 
-        # 检索到数量
+        # Number of retrieval result
         retrieval_cnt = retrieval.sum().int().item()
 
-        # 未检索到
+        # Can not retrieval image
         if retrieval_cnt == 0:
             continue
 
-        # 每个位置打分
+        # Generate score by position
         score = torch.linspace(1, retrieval_cnt, retrieval_cnt).to(device)
 
-        # 检索到的下标位置
+        # index of retrieval result
         index = (torch.nonzero(retrieval == 1).squeeze() + 1.0).float()
 
         mean_AP += (score / index).mean()

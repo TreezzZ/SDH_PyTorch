@@ -8,7 +8,7 @@ import torchvision.transforms as transforms
 
 
 class Onehot(object):
-    """one-hot编码transform
+    """one-hot transform
     """
 
     def __init__(self):
@@ -22,18 +22,18 @@ class Onehot(object):
 
 
 def encode_onehot(labels, num_classes=10):
-    """one-hot编码labels
+    """one-hot labels
 
     Parameters
         labels: ndarray
-        标签
+        Label
 
         num_classes: int
-        类别数量
+        Number of classes
 
     Returns
         onehot_labels: ndarray
-        onehot编码后的标签
+        Onehot label
     """
     onehot_labels = np.zeros((len(labels), num_classes))
 
@@ -44,11 +44,11 @@ def encode_onehot(labels, num_classes=10):
 
 
 def img_transform():
-    """返回transform
+    """Return transform
 
     Returns:
         transform: transforms
-        图像变换
+        Image transform
     """
     transform = transforms.Compose([
         transforms.Resize(256),
@@ -61,15 +61,15 @@ def img_transform():
 
 
 def normalization(data):
-    """归一化数据 (data - mean) / std
+    """normalize data, (data - mean) / std
 
     Parameters
         data: ndarray
-        数据
+        Data
 
     Returns
         normalized_data: ndarray
-        归一化后数据
+        Normalized data
     """
     if data.dtype != np.float:
         data = data.astype(np.float)
