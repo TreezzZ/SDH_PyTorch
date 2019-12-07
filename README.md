@@ -56,7 +56,7 @@ cifar-10-alexnet: 1000 query images, 5000 training images, 4096 Alexnet fc7 feat
 
 nus-wide-tc21-alexnet: 21 classes, 2100 query images, 10500 training images, 4096 Alexnet fc7 features, sigma=3e-4, map@5000.
 
-imagenet-tc100: 100 classes, 5000 query images, 10000 training images, 4096 Alexnet fc7 features, sigma=3e-4, map@1000.
+imagenet-tc100-alexnet: 100 classes, 5000 query images, 10000 training images, 4096 Alexnet fc7 features, sigma=3e-4, map@1000.
 
  bits | 12 | 16 | 24 | 32 | 48 | 64 | 128
    :-:   |  :-:    |   :-:   |   :-:   |   :-:   |   :-:   |   :-:   |   :-:     
