@@ -1,58 +1,54 @@
 # Supervised Discrete Hashing
 
-论文[Supervised Discrete Hashing](http://openaccess.thecvf.com/content_cvpr_2015/html/Shen_Supervised_Discrete_Hashing_2015_CVPR_paper.html)
-
-## Requirements
-1. pytorch 1.1
+## REQUIREMENTS
+1. pytorch
 2. loguru
 
-## 数据集下载
-1. [CIFAR10-gist](https://pan.baidu.com/s/1qE9KiAOTNs5ORn_WoDDwUg) 密码：umb6
-2. [NUS-WIDE](https://pan.baidu.com/s/1S1ZsYCEfbH5eQguHs8yG_w)
-密码：4839
+`pip install -r requirements.txt`
 
-## 运行
-`python run.py --dataset cifar10-gist --data-path <data_path> --code-length 64 `
+## DATASET
+1. [CIFAR10-gist](https://pan.baidu.com/s/1qE9KiAOTNs5ORn_WoDDwUg) Password: umb6
 
-日志记录在`logs`文件夹内
-
-
-## 参数说明
+## USAGE
 ```
+usage: run.py [-h] [--dataset DATASET] [--root ROOT]
+              [--code-length CODE_LENGTH] [--max-iter MAX_ITER]
+              [--num-anchor NUM_ANCHOR] [--num-train NUM_TRAIN]
+              [--num-query NUM_QUERY] [--topk TOPK] [--gpu GPU] [--seed SEED]
+              [--evaluate-interval EVALUATE_INTERVAL] [--lamda LAMDA]
+              [--nu NU] [--sigma SIGMA]
+
 SDH_PyTorch
 
 optional arguments:
   -h, --help            show this help message and exit
-  --dataset DATASET     Dataset used to train (default: cifar10)
-  --data-path DATA_PATH
-                        Path of cifar10 dataset
+  --dataset DATASET     Dataset name.
+  --root ROOT           Path of dataset
   --code-length CODE_LENGTH
-                        Binary hash code length (default: 12)
-  --max-iter MAX_ITER   Maximum iteration number (default: 5)
+                        Binary hash code length.(default:
+                        12,16,24,32,48,64,128)
+  --max-iter MAX_ITER   Number of iterations.(default: 5)
   --num-anchor NUM_ANCHOR
-                        Number of anchor points (default: 1000)
-  --num-query NUM_QUERY
-                        Number of query(default: 1000)
+                        Number of anchor.(default: 1000)
   --num-train NUM_TRAIN
-                        Number of train(default: 5000)
-  --topk TOPK           Compute map of top k (default: -1, use whole dataset)
-  --evaluate-freq EVALUATE_FREQ
-                        Frequency of evaluate (default: 1)
-  --lamda LAMDA         Hyper-parameter, regularization term weight (default:
-                        1.0)
-  --nu NU               Hyper-parameter, penalty term of hash function output
-                        (default: 1e-5)
-  --sigma SIGMA         Hyper-parameter, rbf kernel width (default: 0.4)
-  --gpu GPU             Use gpu (default: 0. -1: use cpu)
-  --batch-size BATCH_SIZE
-                        Batch size (default: 128)
-  --num-workers NUM_WORKERS
-                        Number of loading data workers (default: 0)
-
+                        Number of training data points.(default: 5000)
+  --num-query NUM_QUERY
+                        Number of query data points.(default: 1000)
+  --topk TOPK           Calculate map of top k.(default: all)
+  --gpu GPU             Using gpu.(default: False)
+  --seed SEED           Random seed.(default: 3367)
+  --evaluate-interval EVALUATE_INTERVAL
+                        Evaluation interval.(default: 1)
+  --lamda LAMDA         Hyper-parameter.(default: 1)
+  --nu NU               Hyper-parameter.(default: 1e-5)
+  --sigma SIGMA         Hyper-parameter. 2e-3 for cifar-10-gist, 3e-4 for
+                        others.
 ```
 
-# 实验
- bits | 12 | 24 | 32 | 64 | 128 
-   :-:   |  :-:    |   :-:   |   :-:   |   :-:   |    :-:  
-cifar-10 mAP (topk -1) | 0.3629  | 0.4241  | 0.4260  | 0.4571  | 0.4755 
-cifar-10 mAP (topk 5000) | 0.4415 | 0.5071 | 0.5245 | 0.5349 | 0.5596
+## EXPERIMENTS
+       bits                   |   12   |   16   |   24   |   32   |   48   |   64   |   128  
+        :-:                   |   :-:  |  :-:   |   :-:  |   :-:  |   :-:  |   :-:  |   :-:  
+  cifar-10-gist@ALL           | 0.2919 | 0.3163 | 0.3397 | 0.3531 | 0.3734 | 0.3937 | 0.3972
+  cifar-10-alexnet@ALL        | 0.5480 | 0.5703 | 0.6006 | 0.6367 | 0.6261 | 0.6355 | 0.6591
+  nus-wide-tc21-alexnet@5000  | 0.7711 | 0.7687 | 0.7788 | 0.7893 | 0.7915 | 0.7997 | 0.8108
+  imagenet-tc100-alexnet@1000 | 0.3193 | 0.3650 | 0.4266 | 0.4669 | 0.4973 | 0.5231 | 0.5551

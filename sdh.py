@@ -1,107 +1,114 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from utils.calc_map import calc_map
-
 import torch
 
 from sklearn.metrics.pairwise import rbf_kernel
 from loguru import logger
+from utils.evaluate import mean_average_precision
 
 
-def sdh(train_data,
+def train(
+        train_data,
         train_targets,
         query_data,
         query_targets,
+        retrieval_data,
+        retrieval_targets,
         code_length,
         num_anchor,
         max_iter,
         lamda,
         nu,
         sigma,
+        device,
         topk,
-        evaluate_freq,
+        evaluate_interval,
         ):
-    """SDH algorithm
-    
-    Parameters
-        train_data: Tensor
-        Training data
+    """
+    Training model.
 
-        train_targets: Tensor
-        Training targets
-
-        query_data: Tensor
-        Query data
-
-        query_targets: Tensor
-        Query targets
-
-        code_length: int
-        Hash code length
-
-        num_anchor: int
-        Number of anchor points
-        
-        max_iter: int
-        Maximum iteration number
-
-        lamda: float
-        Hyper-parameter
-
-        nu: float
-        Hyper-parameter
-
-        sigma: float
-        Hyper-parameter
-
-        topk: int
-        Compute mAP using top k retrieval result
-
-        evaluate_freq: int
-        Frequency of evaluate
+    Args
+        train_data(torch.Tensor): Training data.
+        train_targets(torch.Tensor): Training targets.
+        query_data(torch.Tensor): Query data.
+        query_targets(torch.Tensor): Query targets.
+        retrieval_data(torch.Tensor): Retrieval data.
+        retrieval_targets(torch.Tensor): Retrieval targets.
+        code_length(int): Hash code length.
+        num_anchor(int): Number of anchors.
+        max_iter(int): Number of iterations.
+        lamda, nu, sigma(float): Hyper-parameters.
+        device(torch.device): GPU or CPU.
+        topk(int): Compute mAP using top k retrieval result.
+        evaluate_interval(int): Interval of evaluation.
 
     Returns
-        final_P, final_anchor: Tensor
-        Used to construct F(X)
+        checkpoint(dict): Checkpoint.
     """
-    # Permute data
-    perm_index = torch.randperm(train_data.shape[0])
-    train_data = train_data[perm_index, :]
-    train_targets = train_targets[perm_index, :]
+    # Initialization
+    n = train_data.shape[0]
+    L = code_length
+    m = num_anchor
+    t = max_iter
+    X = train_data.t()
+    Y = train_targets.t()
+    B = torch.randn(L, n).sign()
 
-    # Randomly select num_anchor samples from the trainning data
-    anchor = train_data[torch.randperm(train_data.shape[0])[:num_anchor], :]
+    # Permute data
+    perm_index = torch.randperm(n)
+    X = X[:, perm_index]
+    Y = Y[:, perm_index]
+
+    # Randomly select num_anchor samples from the training data
+    anchor = X[:, :m]
 
     # Map training data via RBF kernel
-    phi_x = torch.Tensor(rbf_kernel(train_data.numpy(), anchor.numpy(), sigma)).t()
+    phi_x = torch.from_numpy(rbf_kernel(X.numpy().T, anchor.numpy().T, sigma)).t()
 
-    # Initialize B
-    B = torch.randn((code_length, train_data.shape[0])).sign()
-    Y = train_targets.t()
-
+    # Training
     best_map = 0.0
-    for itr in range(max_iter):
+    B = B.to(device)
+    Y = Y.to(device)
+    phi_x = phi_x.to(device)
+    for it in range(t):
         # G-Step
-        W = torch.inverse(B @ B.t() + lamda * torch.eye(code_length)) @ B @ Y.t()
+        W = torch.pinverse(B @ B.t() + lamda * torch.eye(code_length, device=device)) @ B @ Y.t()
 
         # F-Step
-        P = torch.inverse(phi_x @ phi_x.t()) @ phi_x @ B.t()
+        P = torch.pinverse(phi_x @ phi_x.t()) @ phi_x @ B.t()
         F_X = P.t() @ phi_x
 
         # B-Step
         B = solve_dcc(B, W, Y, F_X, nu)
 
-        # Evaluate within iteration
-        if itr % evaluate_freq == evaluate_freq - 1:
-            mAP = evaluate(query_data, query_targets, train_data, train_targets, anchor, P, sigma, topk)
-            logger.info('[iter: {}][mAP: {:.4f}]'.format(itr+1, mAP))
+        # Evaluate
+        if it % evaluate_interval == evaluate_interval - 1:
+            query_code = generate_code(query_data.t(), anchor, P, sigma)
+            retrieval_code = generate_code(retrieval_data.t(), anchor, P, sigma)
+            mAP = mean_average_precision(
+                query_code.t().to(device),
+                retrieval_code.t().to(device),
+                query_targets.to(device),
+                retrieval_targets.to(device),
+                device,
+                topk,
+            )
+
+            # Save checkpoint
             if best_map < mAP:
                 best_map = mAP
-                final_P = P
-                final_anchor = anchor
+                checkpoint = {
+                    'tB': B.cpu(),
+                    'tL': train_targets.cpu(),
+                    'qB': query_code.cpu(),
+                    'qL': query_targets.cpu(),
+                    'dB': retrieval_code.cpu(),
+                    'dL': retrieval_targets.cpu(),
+                    'anchor': anchor.cpu(),
+                    'P': P.cpu(),
+                    'map': mAP,
+                }
+            logger.info('[iter:{}/{}][map:{:.4f}]'.format(it+1, t, mAP))
 
-    return final_P, final_anchor
+    return checkpoint
 
 
 def solve_dcc(B, W, Y, F_X, nu):
@@ -120,76 +127,18 @@ def solve_dcc(B, W, Y, F_X, nu):
     return B
    
 
-def evaluate(query_data, query_targets, database_data, database_targets, anchor, P, sigma, topk=None):
-    """Evaluate Algorithm
-
-    Parameters
-        query_data: Tensor
-        Query data
-
-        query_targets: Tensor
-        Query targets
-
-        database_data: Tensor
-        Database data
-
-        database_targets: Tensor
-        Database targets
-
-        anchor: Tensor
-        Anchor points
-
-        P: Tensor
-        Projection matrix
-
-        sigma: float
-        RBF kernel width
-
-        topk: int
-        Compute mAP using top k retrieval result
-
-    Returns
-        meanAP: float
-        mean Average precision
-    """
-    # Generate database hash code and query hash code
-    database_code = generate_code(database_data, anchor, P, sigma)
-    query_code = generate_code(query_data, anchor, P, sigma)
-
-    # Compute mAP
-    meanAP = calc_map(query_code,
-                      database_code,
-                      query_targets,
-                      database_targets,
-                      'cpu',
-                      topk,
-                      )
-
-    return meanAP
-
-
 def generate_code(data, anchor, P, sigma):
-    """generate hash code from data using projection matrix
+    """
+    Generate hash code from data using projection matrix.
 
-    Parameters
-        data: Tensor
-        Data
-
-        anchor: Tensor
-        Anchor points
-
-        P: Tensor
-        Projection matrix
-
-        sigma: float
-        RBF kernel width
+    Args
+        data(torch.Tensor): Data.
+        anchor(torch.Tensor): Anchor points.
+        P(torch.Tensor): Projection matrix.
+        sigma(float): RBF kernel width.
 
     Returns
-        code: Tensor
-        hash code
+        code(torch.Tensor): Hash code.
     """
-    return (torch.Tensor(rbf_kernel(data.numpy(), anchor.numpy(), sigma)) @ P).sign()
-
-
-
-
+    phi_x = torch.from_numpy(rbf_kernel(data.cpu().numpy().T, anchor.cpu().numpy().T, sigma)).t().to(P.device)
+    return (P.t() @ phi_x).sign()
