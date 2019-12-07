@@ -7,7 +7,10 @@
 `pip install -r requirements.txt`
 
 ## DATASET
-1. [CIFAR10-gist](https://pan.baidu.com/s/1qE9KiAOTNs5ORn_WoDDwUg) Password: umb6
+1. [cifar-10-gist](https://pan.baidu.com/s/1qE9KiAOTNs5ORn_WoDDwUg) Password: umb6
+2. [cifar-10-alexnet](https://pan.baidu.com/s/1_KUpDHFRLXrmFcz9OxKB_A) Password: 3h2m
+3. [nus-wide-tc21-alexnet](https://pan.baidu.com/s/1rpBILErk79uWPwr8WJs2lA) Password: irtt
+4. [imagenet-tc100-alexnet](https://pan.baidu.com/s/1LzpNgbEKj7h198tjo-Vdzg) Password: 8r8q
 
 ## USAGE
 ```
@@ -47,7 +50,6 @@ optional arguments:
 
 ## EXPERIMENTS
        bits                   |   12   |   16   |   24   |   32   |   48   |   64   |   128  
-        :-:                   |   :-:  |  :-:   |   :-:  |   :-:  |   :-:  |   :-:  |   :-:  
   cifar-10-gist@ALL           | 0.2919 | 0.3163 | 0.3397 | 0.3531 | 0.3734 | 0.3937 | 0.3972
   cifar-10-alexnet@ALL        | 0.5480 | 0.5703 | 0.6006 | 0.6367 | 0.6261 | 0.6355 | 0.6591
   nus-wide-tc21-alexnet@5000  | 0.7711 | 0.7687 | 0.7788 | 0.7893 | 0.7915 | 0.7997 | 0.8108
