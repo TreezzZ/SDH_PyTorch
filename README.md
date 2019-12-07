@@ -49,8 +49,18 @@ optional arguments:
 ```
 
 ## EXPERIMENTS
-       bits                   |   12   |   16   |   24   |   32   |   48   |   64   |   128  
-  cifar-10-gist@ALL           | 0.2919 | 0.3163 | 0.3397 | 0.3531 | 0.3734 | 0.3937 | 0.3972
-  cifar-10-alexnet@ALL        | 0.5480 | 0.5703 | 0.6006 | 0.6367 | 0.6261 | 0.6355 | 0.6591
-  nus-wide-tc21-alexnet@5000  | 0.7711 | 0.7687 | 0.7788 | 0.7893 | 0.7915 | 0.7997 | 0.8108
-  imagenet-tc100-alexnet@1000 | 0.3193 | 0.3650 | 0.4266 | 0.4669 | 0.4973 | 0.5231 | 0.5551
+
+cifar-10-gist: 1000 query images, 5000 training images, 512 GIST features, sigma=2e-3, map@ALL.
+
+cifar-10-alexnet: 1000 query images, 5000 training images, 4096 Alexnet fc7 features, sigma=3e-4, map@ALL.
+
+nus-wide-tc21-alexnet: 21 classes, 2100 query images, 10500 training images, 4096 Alexnet fc7 features, sigma=3e-4, map@5000.
+
+imagenet-tc100: 100 classes, 5000 query images, 10000 training images, 4096 Alexnet fc7 features, sigma=3e-4, map@1000.
+
+ bits | 12 | 16 | 24 | 32 | 48 | 64 | 128
+   :-:   |  :-:    |   :-:   |   :-:   |   :-:   |   :-:   |   :-:   |   :-:     
+cifar-10-gist@ALL | 0.2919 | 0.3163 | 0.3397 | 0.3531 | 0.3734 | 0.3937 | 0.3972
+ cifar-10-alexnet@ALL | 0.5480 | 0.5703 | 0.6006 | 0.6367 | 0.6261 | 0.6355 | 0.6591
+nus-wide-tc21-alexnet@5000 | 0.7711 | 0.7687 | 0.7788 | 0.7893 | 0.7915 | 0.7997 | 0.8108
+imagenet-tc100-alexnet@1000 | 0.3193 | 0.3650 | 0.4266 | 0.4669 | 0.4973 | 0.5231 | 0.5551
