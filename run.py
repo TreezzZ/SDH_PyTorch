@@ -5,7 +5,7 @@ import numpy as np
 import sdh
 
 from loguru import logger
-from data.data_loader import load_data
+from data.dataloader import load_data
 
 
 def run():
@@ -33,15 +33,12 @@ def run():
     np.random.seed(args.seed)
 
     # Load data
-    train_data, train_targets, query_data, query_targets, retrieval_data, retrieval_targets = load_data(
-        args.dataset,
-        args.root,
-        args.num_train,
-        args.num_query,
-    )
+    train_data, train_targets, query_data, query_targets, retrieval_data, retrieval_targets = load_data(args.dataset, args.root)
 
     # Training
     for code_length in args.code_length:
+        #for sigma in [i * 1e-6 for i in range(1, 10)] + [i * 1e-5 for i in range(1, 10)] + [i * 1e-4 for i in range(1, 10)]:
+        #    args.sigma = sigma
         checkpoint = sdh.train(
             train_data,
             train_targets,
@@ -59,20 +56,21 @@ def run():
             args.topk,
             args.evaluate_interval,
         )
+        #logger.info('[sigma:{}][map:{:.4f}]'.format(sigma, checkpoint['map']))
         logger.info('[code length:{}][map:{:.4f}]'.format(code_length, checkpoint['map']))
 
         # Save checkpoint
-        torch.save(checkpoint, 'checkpoints/{}_code_{}_anchor_{}_train_{}_lamda_{}_nu_{}_sigma_{}_topk_{}_map_{:.4f}.pt'.format(
-            args.dataset,
-            code_length,
-            args.num_anchor,
-            args.num_train,
-            args.lamda,
-            args.nu,
-            args.sigma,
-            args.topk,
-            checkpoint['map'],
-        ))
+        #torch.save(checkpoint, 'checkpoints/{}_code_{}_anchor_{}_train_{}_lamda_{}_nu_{}_sigma_{}_topk_{}_map_{:.4f}.pt'.format(
+        #    args.dataset,
+        #    code_length,
+        #    args.num_anchor,
+        #    args.num_train,
+        #    args.lamda,
+        #    args.nu,
+        #    args.sigma,
+        #    args.topk,
+        #    checkpoint['map'],
+        #))
 
 
 def load_config():
@@ -112,8 +110,8 @@ def load_config():
                         help='Hyper-parameter.(default: 1)')
     parser.add_argument('--nu', default=1e-5, type=float,
                         help='Hyper-parameter.(default: 1e-5)')
-    parser.add_argument('--sigma', default=3e-4, type=float,
-                        help='Hyper-parameter. 2e-3 for cifar-10-gist, 3e-4 for others.')
+    parser.add_argument('--sigma', default=5e-4, type=float,
+                        help='Hyper-parameter. 2e-3 for cifar-10-gist, 5e-4 for others.')
 
     args = parser.parse_args()
 
