@@ -37,8 +37,6 @@ def run():
 
     # Training
     for code_length in args.code_length:
-        #for sigma in [i * 1e-6 for i in range(1, 10)] + [i * 1e-5 for i in range(1, 10)] + [i * 1e-4 for i in range(1, 10)]:
-        #    args.sigma = sigma
         checkpoint = sdh.train(
             train_data,
             train_targets,
@@ -56,21 +54,20 @@ def run():
             args.topk,
             args.evaluate_interval,
         )
-        #logger.info('[sigma:{}][map:{:.4f}]'.format(sigma, checkpoint['map']))
         logger.info('[code length:{}][map:{:.4f}]'.format(code_length, checkpoint['map']))
 
         # Save checkpoint
-        #torch.save(checkpoint, 'checkpoints/{}_code_{}_anchor_{}_train_{}_lamda_{}_nu_{}_sigma_{}_topk_{}_map_{:.4f}.pt'.format(
-        #    args.dataset,
-        #    code_length,
-        #    args.num_anchor,
-        #    args.num_train,
-        #    args.lamda,
-        #    args.nu,
-        #    args.sigma,
-        #    args.topk,
-        #    checkpoint['map'],
-        #))
+        torch.save(checkpoint, 'checkpoints/{}_code_{}_anchor_{}_train_{}_lamda_{}_nu_{}_sigma_{}_topk_{}_map_{:.4f}.pt'.format(
+            args.dataset,
+            code_length,
+            args.num_anchor,
+            args.num_train,
+            args.lamda,
+            args.nu,
+            args.sigma,
+            args.topk,
+            checkpoint['map'],
+        ))
 
 
 def load_config():
