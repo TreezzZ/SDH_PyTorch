@@ -33,10 +33,6 @@ optional arguments:
   --max-iter MAX_ITER   Number of iterations.(default: 5)
   --num-anchor NUM_ANCHOR
                         Number of anchor.(default: 1000)
-  --num-train NUM_TRAIN
-                        Number of training data points.(default: 5000)
-  --num-query NUM_QUERY
-                        Number of query data points.(default: 1000)
   --topk TOPK           Calculate map of top k.(default: all)
   --gpu GPU             Using gpu.(default: False)
   --seed SEED           Random seed.(default: 3367)

@@ -11,11 +11,10 @@ from data.dataloader import load_data
 def run():
     # Load configuration
     args = load_config()
-    logger.add('logs/{}_code_{}_anchor_{}_train_{}_lamda_{}_nu_{}_sigma_{}_topk_{}.log'.format(
+    logger.add('logs/{}_code_{}_anchor_{}_lamda_{}_nu_{}_sigma_{}_topk_{}.log'.format(
             args.dataset,
             '_'.join([str(code_length) for code_length in args.code_length]),
             args.num_anchor,
-            args.num_train,
             args.lamda,
             args.nu,
             args.sigma,
@@ -57,11 +56,10 @@ def run():
         logger.info('[code length:{}][map:{:.4f}]'.format(code_length, checkpoint['map']))
 
         # Save checkpoint
-        torch.save(checkpoint, 'checkpoints/{}_code_{}_anchor_{}_train_{}_lamda_{}_nu_{}_sigma_{}_topk_{}_map_{:.4f}.pt'.format(
+        torch.save(checkpoint, 'checkpoints/{}_code_{}_anchor_{}_lamda_{}_nu_{}_sigma_{}_topk_{}_map_{:.4f}.pt'.format(
             args.dataset,
             code_length,
             args.num_anchor,
-            args.num_train,
             args.lamda,
             args.nu,
             args.sigma,
@@ -91,10 +89,6 @@ def load_config():
                         help='Number of iterations.(default: 5)')
     parser.add_argument('--num-anchor', default=1000, type=int,
                         help='Number of anchor.(default: 1000)')
-    parser.add_argument('--num-train', default=5000, type=int,
-                        help='Number of training data points.(default: 5000)')
-    parser.add_argument('--num-query', default=1000, type=int,
-                        help='Number of query data points.(default: 1000)')
     parser.add_argument('--topk', default=-1, type=int,
                         help='Calculate map of top k.(default: all)')
     parser.add_argument('--gpu', default=None, type=int,
