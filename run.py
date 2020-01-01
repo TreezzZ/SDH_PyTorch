@@ -51,7 +51,6 @@ def run():
             args.sigma,
             args.device,
             args.topk,
-            args.evaluate_interval,
         )
         logger.info('[code length:{}][map:{:.4f}]'.format(code_length, checkpoint['map']))
 
@@ -85,8 +84,8 @@ def load_config():
                         help='Path of dataset')
     parser.add_argument('--code-length', default='12,16,24,32,48,64,128', type=str,
                         help='Binary hash code length.(default: 12,16,24,32,48,64,128)')
-    parser.add_argument('--max-iter', default=5, type=int,
-                        help='Number of iterations.(default: 5)')
+    parser.add_argument('--max-iter', default=3, type=int,
+                        help='Number of iterations.(default: 3)')
     parser.add_argument('--num-anchor', default=1000, type=int,
                         help='Number of anchor.(default: 1000)')
     parser.add_argument('--topk', default=-1, type=int,
@@ -95,8 +94,6 @@ def load_config():
                         help='Using gpu.(default: False)')
     parser.add_argument('--seed', default=3367, type=int,
                         help='Random seed.(default: 3367)')
-    parser.add_argument('--evaluate-interval', default=1, type=int,
-                        help='Evaluation interval.(default: 1)')
     parser.add_argument('--lamda', default=1, type=float,
                         help='Hyper-parameter.(default: 1)')
     parser.add_argument('--nu', default=1e-5, type=float,

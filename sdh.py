@@ -2,7 +2,7 @@ import torch
 
 from sklearn.metrics.pairwise import rbf_kernel
 from loguru import logger
-from utils.evaluate import mean_average_precision
+from utils.evaluate import mean_average_precision, pr_curve
 
 
 def train(
@@ -20,7 +20,6 @@ def train(
         sigma,
         device,
         topk,
-        evaluate_interval,
         ):
     """
     Training model.
@@ -38,7 +37,6 @@ def train(
         lamda, nu, sigma(float): Hyper-parameters.
         device(torch.device): GPU or CPU.
         topk(int): Compute mAP using top k retrieval result.
-        evaluate_interval(int): Interval of evaluation.
 
     Returns
         checkpoint(dict): Checkpoint.
@@ -64,7 +62,6 @@ def train(
     phi_x = torch.from_numpy(rbf_kernel(X.numpy().T, anchor.numpy().T, sigma)).t()
 
     # Training
-    best_map = 0.0
     B = B.to(device)
     Y = Y.to(device)
     phi_x = phi_x.to(device)
@@ -79,34 +76,43 @@ def train(
         # B-Step
         B = solve_dcc(B, W, Y, F_X, nu)
 
-        # Evaluate
-        if it % evaluate_interval == evaluate_interval - 1:
-            query_code = generate_code(query_data.t(), anchor, P, sigma)
-            retrieval_code = generate_code(retrieval_data.t(), anchor, P, sigma)
-            mAP = mean_average_precision(
-                query_code.t().to(device),
-                retrieval_code.t().to(device),
-                query_targets.to(device),
-                retrieval_targets.to(device),
-                device,
-                topk,
-            )
+    # Evaluate
+    query_code = generate_code(query_data.t(), anchor, P, sigma)
+    retrieval_code = generate_code(retrieval_data.t(), anchor, P, sigma)
 
-            # Save checkpoint
-            if best_map < mAP:
-                best_map = mAP
-                checkpoint = {
-                    'tB': B.cpu(),
-                    'tL': train_targets.cpu(),
-                    'qB': query_code.cpu(),
-                    'qL': query_targets.cpu(),
-                    'dB': retrieval_code.cpu(),
-                    'dL': retrieval_targets.cpu(),
-                    'anchor': anchor.cpu(),
-                    'P': P.cpu(),
-                    'map': mAP,
-                }
-            logger.info('[iter:{}/{}][map:{:.4f}]'.format(it+1, t, mAP))
+    # Compute map
+    mAP = mean_average_precision(
+        query_code.t().to(device),
+        retrieval_code.t().to(device),
+        query_targets.to(device),
+        retrieval_targets.to(device),
+        device,
+        topk,
+    )
+
+    # PR curve
+    Precision, R = pr_curve(
+        query_code.t().to(device),
+        retrieval_code.t().to(device),
+        query_targets.to(device),
+        retrieval_targets.to(device),
+        device,
+    )
+
+    # Save checkpoint
+    checkpoint = {
+        'tB': B,
+        'tL': train_targets,
+        'qB': query_code,
+        'qL': query_targets,
+        'rB': retrieval_code,
+        'rL': retrieval_targets,
+        'anchor': anchor,
+        'projection': P,
+        'P': Precision,
+        'R': R,
+        'map': mAP,
+    }
 
     return checkpoint
 
@@ -142,3 +148,4 @@ def generate_code(data, anchor, P, sigma):
     """
     phi_x = torch.from_numpy(rbf_kernel(data.cpu().numpy().T, anchor.cpu().numpy().T, sigma)).t().to(P.device)
     return (P.t() @ phi_x).sign()
+
